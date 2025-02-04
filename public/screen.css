@@ -5,6 +5,15 @@
   >div {
     display: flex;
     gap: 0.5rem;
+    cursor: crosshair;
+  }
+
+  b.nr {
+    opacity: 0.6;
+  }
+
+  b.pti {
+    color: var(--color2);
   }
 }
 
@@ -23,7 +32,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 
-  > div {
+  >div {
     display: flex;
     gap: 1rem;
 
@@ -75,7 +84,6 @@ main[data-status="started"] {
     }
   }
 
-
   .score {
     display: block;
     color: var(--color1);
@@ -83,7 +91,7 @@ main[data-status="started"] {
 
   .image {
     display: block;
-
+    flex: 1;
     opacity: 0;
     scale: 0;
 
@@ -93,7 +101,7 @@ main[data-status="started"] {
     }
 
     img {
-      max-height: 40vh;
+      max-height: 30vh;
       object-fit: contain;
     }
   }
@@ -113,6 +121,18 @@ main[data-status="started"] {
       text-wrap: balance;
     }
   }
+
+  .players {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 50%;
+    row-gap: 0;
+    column-gap: 0.5rem;
+
+    &>div {
+      gap: 0.1rem;
+    }
+  }
 }
 
 main[data-status="over"] {
@@ -124,14 +144,18 @@ main[data-status="over"] {
         transition: all 5s ease-in;
 
         &:nth-child(3) {
-          filter: blur(50px);
+          filter: blur(30px) grayscale(100%);
         }
       }
 
       &:hover {
         b {
-          filter: blur(0px);
+          filter: blur(0px) grayscale(0%);
         }
+      }
+
+      .online {
+        display: none;
       }
     }
   }

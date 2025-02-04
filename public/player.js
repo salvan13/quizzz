@@ -21,7 +21,6 @@ function start() {
   });
 
   socket.on("state", (data) => {
-    data = JSON.parse(data);
     console.log("state", data);
     document.querySelector("main").dataset.status = data.status;
 

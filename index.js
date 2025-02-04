@@ -24,7 +24,7 @@ const io = new Server(httpServer, {});
 
 app.use(express.static('public'));
 
-let players = [];
+let players = DEMO ? new Array(20).fill(0).map((_, i) => ({ pid: `p_${i}`, username: `player_${i}`, answers: [], score: null, connected: true })) : [];
 
 const state = {
   status: "waiting",
@@ -47,6 +47,9 @@ io.on("connection", (socket) => {
     if (p) {
       p.connected = false;
     }
+    io.in("screen").emit("players", {
+      players: players
+    });
   });
 
   if (clientType === "player" && pid && username) {
@@ -59,25 +62,25 @@ io.on("connection", (socket) => {
       player.username = username;
     }
     player.connected = true;
-    io.in("screen").emit("players", JSON.stringify({
+    io.in("screen").emit("players", {
       players: players
-    }));
+    });
     socket.on("answer", (data) => {
       if (state.currentQuestion && Number.isFinite(data?.index)) {
         player.answers[state.currentQuestionIndex] = data.index;
-        console.log("answer", player.username, data.index);
+        console.log(player.username, data.index);
       }
     });
-    socket.emit("state", JSON.stringify(state));
+    socket.emit("state", state);
   } else if (clientType === "screen") {
     socket.join("screen");
     socket.on("start", () => {
       start();
     });
-    socket.emit("players", JSON.stringify({
+    socket.emit("players", {
       players: players
-    }));
-    socket.emit("state", JSON.stringify(state));
+    });
+    socket.emit("state", state);
   }
 });
 
@@ -87,9 +90,9 @@ httpServer.listen(port, () => {
 
 const sleep = (t = 1) => new Promise((res) => setTimeout(res, t * 1000));
 
-const broadcast = () => io.emit("state", JSON.stringify(state));
+const broadcast = () => io.emit("state", state);
 
-const broadcastTimer = () => io.emit("timer", JSON.stringify({ timer: state.timer }));
+const broadcastTimer = () => io.emit("timer", { timer: state.timer });
 
 const start = async () => {
   state.status = "started";
@@ -110,6 +113,7 @@ const nextQuestion = async () => {
   if (questions[state.currentQuestionIndex + 1]) {
     state.currentQuestionIndex++;
     state.currentQuestion = structuredClone(questions[state.currentQuestionIndex]);
+    console.log(">", state.currentQuestion.question);
     delete state.currentQuestion.correct;
     state.timer = DEMO ? 4 : (state.currentQuestion.time || 10);
     broadcast();
@@ -125,8 +129,13 @@ const nextQuestion = async () => {
       await sleep(1);
     }
     const players = getConnectedPlayers();
-    const correctAnswers = players.filter(p => p.answers[state.currentQuestionIndex] === questions[state.currentQuestionIndex].correct).length;
-    state.info = `Risposte corrette: ${correctAnswers}/${players.length} ${(correctAnswers > players.length / 2) ? '👍' : '👎'}`;
+    const currQuestion = questions[state.currentQuestionIndex];
+    const correctAnswers = players.filter(p => p.answers[state.currentQuestionIndex] === currQuestion.correct).length;
+    state.info = `
+      Risposta Corretta: <b>${currQuestion.correct}</b><br>
+      ${currQuestion.responses[currQuestion.correct]}<br><br>
+      ${correctAnswers}/${players.length} ${(correctAnswers > players.length / 2) ? '👍' : '👎'}
+    `;
     state.currentQuestion = null;
     state.timer = null;
     broadcast();
@@ -144,9 +153,9 @@ const nextQuestion = async () => {
       return 0;
     });
     console.log(players);
-    io.in("screen").emit("players", JSON.stringify({
+    io.in("screen").emit("players", {
       players: players
-    }));
+    });
   }
 };
 
