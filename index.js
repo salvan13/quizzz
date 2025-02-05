@@ -105,7 +105,7 @@ const start = async () => {
 const getConnectedPlayers = () => players.filter(p => p.connected);
 
 const nextQuestion = async () => {
-  await sleep(DEMO ? 1 : 3);
+  await sleep(DEMO ? 1 : 4);
   state.currentQuestion = null;
   state.timer = null;
   state.info = null;
@@ -131,15 +131,15 @@ const nextQuestion = async () => {
     const players = getConnectedPlayers();
     const currQuestion = questions[state.currentQuestionIndex];
     const correctAnswers = players.filter(p => p.answers[state.currentQuestionIndex] === currQuestion.correct).length;
-    state.info = `
-      Risposta Corretta: <b>${currQuestion.correct}</b><br>
-      ${currQuestion.responses[currQuestion.correct]}<br><br>
-      ${correctAnswers}/${players.length} ${(correctAnswers > players.length / 2) ? '👍' : '👎'}
-    `;
+    state.info = [
+      `Risposta Corretta: <b>${currQuestion.correct}</b>`,
+      currQuestion.responses[currQuestion.correct],
+      `${correctAnswers}/${players.length} ${(correctAnswers > players.length / 2) ? '👍' : '👎'}`
+    ];
     state.currentQuestion = null;
     state.timer = null;
     broadcast();
-    await sleep(1);
+    await sleep(DEMO ? 1 : 4);
   } else {
     state.status = "over";
     broadcast();

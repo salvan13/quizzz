@@ -14,7 +14,13 @@ socket.on("state", (data) => {
   console.log("state", data);
   document.querySelector("main").dataset.status = data.status;
 
-  document.querySelector(".info").innerHTML = data?.info || "";
+  if(data?.info?.length > 0) {
+    document.querySelector(".info").innerHTML = `<div>${data.info.map(i => `<div>${i}</div>`).join("")}</div>`;
+  } else {
+    document.querySelector(".info").innerHTML = "";
+  }
+
+
   document.querySelector(".question").innerHTML = `<div>${data.currentQuestion?.question || ""}</div>`;
   document.querySelector(".score").innerHTML = Number.isFinite(data.currentQuestion?.score) ? `punti: ${data.currentQuestion?.score}` : "";
   document.querySelector(".image").innerHTML = data.currentQuestion?.image ? `<img src="${data.currentQuestion?.image}">` : "";
