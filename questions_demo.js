@@ -1,3 +1,8 @@
+// @ts-check
+
+/**
+ * @type {import("./types").Questions}
+ */
 export const questions = [
   {
     question: "Come si chiama l'azienda in cui lavori?",

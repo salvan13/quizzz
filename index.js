@@ -1,3 +1,5 @@
+// @ts-check
+
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -5,6 +7,9 @@ import { Server } from "socket.io";
 const DEMO = Boolean(process.env.DEMO);
 DEMO && console.log("DEMO settings active");
 
+/**
+ * @type {import("./types").Questions}
+ */
 const questions = (await import(DEMO ? "./questions_demo.js" : "./questions.js")).questions || [];
 
 console.log("Questions:", questions.length);
@@ -24,8 +29,14 @@ const io = new Server(httpServer, {});
 
 app.use(express.static('public'));
 
+/**
+ * @type {import("./types").Players}
+ */
 let players = DEMO ? new Array(20).fill(0).map((_, i) => ({ pid: `p_${i}`, username: `player_${i}`, answers: [], score: null, connected: true })) : [];
 
+/**
+ * @type {import("./types").State}
+ */
 const state = {
   status: "waiting",
   currentQuestionIndex: -1,
@@ -35,20 +46,20 @@ const state = {
 };
 
 io.on("connection", (socket) => {
-  const clientType = socket.handshake.query?.clientType;
-  const username = socket.handshake.query?.username?.substring(0, 10);
-  const pid = socket.handshake.query?.pid;
+  const clientType = socket.handshake.query?.clientType?.toString();
+  const username = socket.handshake.query?.username?.toString().substring(0, 10);
+  const pid = socket.handshake.query?.pid?.toString();
 
   console.log("client connected", clientType, username, pid);
 
   socket.on("disconnect", () => {
     console.log("client disconnected", clientType, username, pid);
-    const p = players.find(p => p.pid === pid);
-    if (p) {
-      p.connected = false;
+    const player = players.find(p => p.pid === pid);
+    if (player) {
+      player.connected = false;
     }
     io.in("screen").emit("players", {
-      players: players
+      players
     });
   });
 
@@ -63,7 +74,7 @@ io.on("connection", (socket) => {
     }
     player.connected = true;
     io.in("screen").emit("players", {
-      players: players
+      players
     });
     socket.on("answer", (data) => {
       if (state.currentQuestion && Number.isFinite(data?.index)) {
@@ -78,7 +89,7 @@ io.on("connection", (socket) => {
       start();
     });
     socket.emit("players", {
-      players: players
+      players
     });
     socket.emit("state", state);
   }
@@ -112,29 +123,35 @@ const nextQuestion = async () => {
   broadcast();
   if (questions[state.currentQuestionIndex + 1]) {
     state.currentQuestionIndex++;
-    state.currentQuestion = structuredClone(questions[state.currentQuestionIndex]);
+    const q = questions[state.currentQuestionIndex];
+    state.currentQuestion = {
+      question: q.question,
+      responses: [...q.responses],
+      score: q.score,
+      time: q.time,
+      image: q.image,
+    };
     console.log(">", state.currentQuestion.question);
-    delete state.currentQuestion.correct;
     state.timer = DEMO ? 4 : (state.currentQuestion.time || 10);
     broadcast();
     await sleep(1);
-    while (state.timer > 0) {
+    while (state.timer && (state.timer > 0)) {
       const players = getConnectedPlayers();
-      const answers = players.filter(p => Number.isFinite(p.answers[state.currentQuestionIndex])).length;
-      if (answers === players.length) {
+      const totalAnswers = players.filter(p => Number.isFinite(p.answers[state.currentQuestionIndex])).length;
+      if (totalAnswers === players.length) {
         break;
       }
       state.timer--;
       broadcastTimer();
       await sleep(1);
     }
-    const players = getConnectedPlayers();
+    const currPlayers = getConnectedPlayers();
     const currQuestion = questions[state.currentQuestionIndex];
-    const correctAnswers = players.filter(p => p.answers[state.currentQuestionIndex] === currQuestion.correct).length;
+    const correctAnswers = currPlayers.filter(p => p.answers[state.currentQuestionIndex] === currQuestion.correct).length;
     state.info = [
       `Risposta Corretta: <b>${currQuestion.correct}</b>`,
       currQuestion.responses[currQuestion.correct],
-      `${correctAnswers}/${players.length} ${(correctAnswers > players.length / 2) ? '👍' : '👎'}`
+      `${correctAnswers}/${currPlayers.length} ${(correctAnswers > currPlayers.length / 2) ? '👍' : '👎'}`
     ];
     state.currentQuestion = null;
     state.timer = null;
@@ -144,21 +161,25 @@ const nextQuestion = async () => {
     state.status = "over";
     broadcast();
     players = players.map(player => getPlayerWithScore(player)).sort((p0, p1) => {
-      if (p0.score > p1.score) {
+      if ((p0.score ?? 0) > (p1.score ?? 0)) {
         return -1;
       }
-      if (p0.score < p1.score) {
+      if ((p0.score ?? 0) < (p1.score ?? 0)) {
         return 1;
       }
       return 0;
     });
     console.log(players);
     io.in("screen").emit("players", {
-      players: players
+      players
     });
   }
 };
 
+/**
+ * @param {import("./types").Player} player 
+ * @returns {import("./types").Player}
+ */
 function getPlayerWithScore(player) {
   let score = 0;
 
