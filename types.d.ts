@@ -1,17 +1,23 @@
 export type Question = {
   
   /**
-   * Testo delle domanda (HTMLString)
+   * Testo della domanda
+   * @type HTMLString
+   * @example "Cos'è un tag <pre>&lt;script&gt;</pre>?"
    */
   question: string;
 
   /**
    * Link opzionale all'immagine
+   * @example "images/netscape.png"
+   * @example "https://www.skillbill.it/images/logo_skillbill_00.svg"
    */
   image?: string;
 
   /**
-   * Lista di risposte (HTMLString[])
+   * Lista di risposte
+   * @type HTMLString[]
+   * @example ["Marte", "Giove", "Venere", "Plutone"]
    */
   responses: string[];
 
@@ -21,7 +27,7 @@ export type Question = {
   score: number;
 
   /**
-   * Secondi disponibili per rispondere
+   * Secondi disponibili per rispondere (almeno 30 secondi, di più per domande lunghe)
    */
   time: number;
 
