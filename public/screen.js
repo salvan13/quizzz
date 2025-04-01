@@ -45,11 +45,17 @@ socket.on("timer", (data) => {
 socket.on("players", (data) => {
   console.log("players", data);
   document.querySelector(".players").innerHTML = data.players.map((player, i) =>
-    `<div>
+    `<div class="player-box">
       <b class="nr">${String(i + 1).padStart(2, "0")}.</b>
       ${Number.isFinite(player.score) ? `<b class="pti">${String(player.score).padStart(3, "0")}</b>` : ""}
       <b>${player.username}</b>
       <span class="online">${player.connected ? `🟢` : `🔴`}</span>
      </div>`
   ).join("");
+});
+
+document.querySelector(".players").addEventListener("click", e => {
+  if(document.querySelector("main").dataset.status === "over") {
+    e.target.closest(".player-box").classList.add("show");
+  }
 });

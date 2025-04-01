@@ -166,11 +166,12 @@ main[data-status="over"] {
         transition: all 5s ease-in;
 
         &:nth-child(3) {
+          cursor: pointer;
           filter: blur(30px) grayscale(100%);
         }
       }
 
-      &:hover {
+      &.show {
         b {
           filter: blur(0px) grayscale(0%);
         }
